@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Obras</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    select, input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    #resultado {
+      background: #e8f5e9;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <h2>Calculadora de Obras</h2>
+    <label>Escolha o período do dia:</label>
+    <select id="periodo">
+      <option value="manha">Manhã</option>
+      <option value="tarde">Tarde</option>
+      <option value="noite">Noite</option>
+    </select>
+    <p><strong><span id="saudacao"></span> <span id="nome-usuario"></span>!</strong></p>
+    
+
+    <p><strong>Usuário logado:</strong> <span id="nome-usuario"></span></p>
+
+    <label>Unidade de medida:</label>
+    <select id="unidade">
+      <option value="m">Metros (m)</option>
+      <option value="cm">Centímetros (cm)</option>
+      <option value="mm">Milímetros (mm)</option>
+    </select>
+
+    <label>Tipo de obra:</label>
+    <select id="tipo">
+      <option value="terraplenagem">Terraplenagem</option>
+      <option value="revestimento">Revestimento</option>
+      <option value="reservatorio">Reservatório</option>
+      <option value="pavimentacao">Pavimentação</option>
+    </select>
+
+    <div id="subtipo-div" style="display:none;">
+      <label>Formato do reservatório:</label>
+      <select id="subtipo">
+        <option value="cilindrico">Cilíndrico</option>
+        <option value="cubico">Cúbico</option>
+        <option value="retangular">Retangular</option>
+      </select>
+    </div>
+
+    <div id="inputs"></div>
+    <button onclick="calcular()">Calcular</button>
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    const unidadeInput = document.getElementById('unidade');
+    const tipoSelect = document.getElementById('tipo');
+    const subtipoSelect = document.getElementById('subtipo');
+    const subtipoDiv = document.getElementById('subtipo-div');
+    const inputsDiv = document.getElementById('inputs');
+    const nomeUsuarioSpan = document.getElementById('nome-usuario');
+
+    // Recupera o nome correto do usuário logado
+    const periodoSelect = document.getElementById("periodo");
+    const saudacaoSpan = document.getElementById("saudacao");
+
+    periodoSelect.addEventListener("change", atualizarSaudacao);
+    atualizarSaudacao();
+
+    function atualizarSaudacao() {
+      const periodo = periodoSelect.value;
+      let saudacao = "Olá";
+      if (periodo === "manha") {
+        saudacao = "Bom dia";
+      } else if (periodo === "tarde") {
+        saudacao = "Boa tarde";
+      } else if (periodo === "noite") {
+        saudacao = "Boa noite";
+      }
+      saudacaoSpan.textContent = saudacao;
+    }
+    
+    const login = localStorage.getItem('usuarioAtual') || 'Usuário';
+
+    nomeUsuarioSpan.textContent = login;
+
+    tipoSelect.addEventListener('change', atualizarInputs);
+    subtipoSelect.addEventListener('change', atualizarInputs);
+    atualizarInputs();
+
+    function atualizarInputs() {
+      const tipo = tipoSelect.value;
+      const subtipo = subtipoSelect.value;
+      let html = '';
+
+      if (tipo === 'reservatorio') {
+        subtipoDiv.style.display = 'block';
+      } else {
+        subtipoDiv.style.display = 'none';
+      }
+
+      switch (tipo) {
+        case 'terraplenagem':
+          html = gerarInputs(['Comprimento', 'Largura', 'Profundidade']);
+          break;
+        case 'revestimento':
+          html = gerarInputs(['Altura', 'Largura']);
+          break;
+        case 'pavimentacao':
+          html = gerarInputs(['Comprimento', 'Largura']);
+          break;
+        case 'reservatorio':
+          switch (subtipo) {
+            case 'cilindrico':
+              html = gerarInputs(['Raio', 'Altura']);
+              break;
+            case 'cubico':
+              html = gerarInputs(['Aresta']);
+              break;
+            case 'retangular':
+              html = gerarInputs(['Comprimento', 'Largura', 'Altura']);
+              break;
+          }
+          break;
+      }
+      inputsDiv.innerHTML = html;
+    }
+
+    function gerarInputs(labels) {
+      return labels.map(label => `
+        <label>${label}:</label>
+        <input type="number" min="0.01" step="any" id="${label.toLowerCase()}" placeholder="${label}" />
+      `).join('');
+    }
+
+    function converterParaMetros(valor, unidade) {
+      switch (unidade) {
+        case 'mm': return valor / 1000;
+        case 'cm': return valor / 100;
+        case 'm':
+        default: return valor;
+      }
+    }
+
+    function calcular() {
+      const tipo = tipoSelect.value;
+      const subtipo = subtipoSelect.value;
+      const unidade = unidadeInput.value;
+
+      let resultado = '';
+
+      try {
+        switch (tipo) {
+          case 'terraplenagem': {
+            const c = converterParaMetros(parseFloat(document.getElementById('comprimento').value), unidade);
+            const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
+            const p = converterParaMetros(parseFloat(document.getElementById('profundidade').value), unidade);
+            const volume = c * l * p;
+            resultado = `Volume: ${volume.toFixed(2)} m³`;
+            break;
+          }
+          case 'revestimento': {
+            const a = converterParaMetros(parseFloat(document.getElementById('altura').value), unidade);
+            const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
+            const area = a * l;
+            resultado = `Área: ${area.toFixed(2)} m²`;
+            break;
+          }
+          case 'pavimentacao': {
+            const c = converterParaMetros(parseFloat(document.getElementById('comprimento').value), unidade);
+            const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
+            const area = c * l;
+            resultado = `Área: ${area.toFixed(2)} m²`;
+            break;
+          }
+          case 'reservatorio': {
+            switch (subtipo) {
+              case 'cilindrico': {
+                const r = converterParaMetros(parseFloat(document.getElementById('raio').value), unidade);
+                const a = converterParaMetros(parseFloat(document.getElementById('altura').value), unidade);
+                const volume = Math.PI * r * r * a;
+                resultado = `Volume Cilíndrico: ${volume.toFixed(2)} m³`;
+                break;
+              }
+              case 'cubico': {
+                const aresta = converterParaMetros(parseFloat(document.getElementById('aresta').value), unidade);
+                const volume = Math.pow(aresta, 3);
+                resultado = `Volume Cúbico: ${volume.toFixed(2)} m³`;
+                break;
+              }
+              case 'retangular': {
+                const c = converterParaMetros(parseFloat(document.getElementById('comprimento').value), unidade);
+                const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
+                const a = converterParaMetros(parseFloat(document.getElementById('altura').value), unidade);
+                const volume = c * l * a;
+                resultado = `Volume Retangular: ${volume.toFixed(2)} m³`;
+                break;
+              }
+            }
+            break;
+          }
+        }
+      } catch (e) {
+        resultado = 'Erro no cálculo. Verifique os valores.';
+      }
+
+      document.getElementById('resultado').textContent = `${login}, ${resultado}`;
+    }
+  </script>
+</body>
+</html>
