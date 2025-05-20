@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ObraCalc - Cálculo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eef;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 350px;
+    }
+    input, select, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      width: 100%;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 id="boas-vindas"></h2>
+    <label>Escolha o tipo de obra:</label>
+    <select id="tipoObra">
+      <option value="terraplenagem">Terraplenagem</option>
+      <option value="revestimento">Revestimento</option>
+      <option value="pavimentacao">Pavimentação</option>
+      <option value="reservatorio">Reservatório</option>
+    </select>
+    <input type="text" id="unidade" placeholder="Unidade (mm, cm, m)" />
+    <button onclick="realizarCalculo()">Calcular</button>
+    <pre id="resultado"></pre>
+  </div>
+
+<script>
+  if (localStorage.getItem("usuarioAutenticado") !== "true") {
+    window.location.href = "login.html";
+  }
+
+  document.getElementById("boas-vindas").innerText = `Olá, ${localStorage.getItem("usuarioAtual")}!`;
+
+  function converterParaMetros(valor, unidade) {
+    switch (unidade) {
+      case "mm": return valor / 1000;
+      case "cm": return valor / 100;
+      case "m": return valor;
+      default: alert("Unidade inválida. Usando metros."); return valor;
+    }
+  }
+
+  function entradaNumero(texto) {
+    const valor = parseFloat(prompt(texto));
+    if (isNaN(valor) || valor <= 0) throw "Valor inválido";
+    return valor;
+  }
+
+  function realizarCalculo() {
+    const tipo = document.getElementById("tipoObra").value;
+    const unidade = document.getElementById("unidade").value.toLowerCase();
+    let resultado = "";
+    try {
+      if (tipo === "terraplenagem" || tipo === "pavimentacao") {
+        const c = converterParaMetros(entradaNumero("Comprimento:"), unidade);
+        const l = converterParaMetros(entradaNumero("Largura:"), unidade);
+        if (tipo === "terraplenagem") {
+          const p = converterParaMetros(entradaNumero("Profundidade:"), unidade);
+          resultado = `Volume: ${(c * l * p).toFixed(2)} m³`;
+        } else {
+          resultado = `Área: ${(c * l).toFixed(2)} m²`;
+        }
+      } else if (tipo === "revestimento") {
+        const a = converterParaMetros(entradaNumero("Altura:"), unidade);
+        const l = converterParaMetros(entradaNumero("Largura:"), unidade);
+        resultado = `Área: ${(a * l).toFixed(2)} m²`;
+      } else if (tipo === "reservatorio") {
+        const modelo = prompt("Tipo (1=Cilíndrico, 2=Cúbico, 3=Retangular):");
+        let vol = 0, nome = "";
+        if (modelo === "1") {
+          const r = converterParaMetros(entradaNumero("Raio:"), unidade);
+          const a = converterParaMetros(entradaNumero("Altura:"), unidade);
+          vol = Math.PI * r * r * a; nome = "Cilíndrico";
+        } else if (modelo === "2") {
+          const a = converterParaMetros(entradaNumero("Aresta:"), unidade);
+          vol = a ** 3; nome = "Cúbico";
+        } else if (modelo === "3") {
+          const c = converterParaMetros(entradaNumero("Comprimento:"), unidade);
+          const l = converterParaMetros(entradaNumero("Largura:"), unidade);
+          const a = converterParaMetros(entradaNumero("Altura:"), unidade);
+          vol = c * l * a; nome = "Retangular";
+        } else {
+          alert("Tipo inválido"); return;
+        }
+        resultado = `Volume (${nome}): ${vol.toFixed(2)} m³`;
+      }
+      document.getElementById("resultado").innerText = resultado;
+    } catch {
+      document.getElementById("resultado").innerText = "Erro no cálculo.";
+    }
+  }
+</script>
+</body>
+</html>
