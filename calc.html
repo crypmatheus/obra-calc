@@ -35,13 +35,8 @@
 <body>
   <div class="container">
     <h2>Calculadora de Obras</h2>
-    <label>Escolha o período do dia:</label>
-    <select id="periodo">
-      <option value="manha">Manhã</option>
-      <option value="tarde">Tarde</option>
-      <option value="noite">Noite</option>
-    </select>
-    <p><strong><span id="saudacao"></span> <span id="nome-usuario"></span>!</strong></p>
+    <label>Seu nome:</label>
+    <input type="text" id="usuario" placeholder="Digite seu nome" />
 
     <label>Unidade de medida:</label>
     <select id="unidade">
@@ -68,10 +63,6 @@
     </div>
 
     <div id="inputs"></div>
-    <div id="custo-div" style="display:none;">
-      <label>Custo por unidade (R$):</label>
-      <input type="number" id="custo" step="0.01" placeholder="Ex: 120.00" />
-    </div>
     <button onclick="calcular()">Calcular</button>
     <div id="resultado"></div>
   </div>
@@ -82,30 +73,13 @@
     const subtipoSelect = document.getElementById('subtipo');
     const subtipoDiv = document.getElementById('subtipo-div');
     const inputsDiv = document.getElementById('inputs');
-    const nomeUsuarioSpan = document.getElementById('nome-usuario');
-    const periodoSelect = document.getElementById("periodo");
-    const saudacaoSpan = document.getElementById("saudacao");
-
-    const login = localStorage.getItem('usuarioAtual') || 'Usuário';
-    nomeUsuarioSpan.textContent = login;
-
-    periodoSelect.addEventListener("change", atualizarSaudacao);
-    function atualizarSaudacao() {
-      const periodo = periodoSelect.value;
-      let saudacao = "Olá";
-      if (periodo === "manha") {
-        saudacao = "Bom dia";
-      } else if (periodo === "tarde") {
-        saudacao = "Boa tarde";
-      } else if (periodo === "noite") {
-        saudacao = "Boa noite";
-      }
-      saudacaoSpan.textContent = saudacao;
-    }
-    atualizarSaudacao();
+    let nomeUsuario = '';
 
     tipoSelect.addEventListener('change', atualizarInputs);
     subtipoSelect.addEventListener('change', atualizarInputs);
+    document.getElementById('usuario').addEventListener('blur', () => {
+      nomeUsuario = document.getElementById('usuario').value.trim();
+    });
     atualizarInputs();
 
     function atualizarInputs() {
@@ -144,7 +118,6 @@
           break;
       }
       inputsDiv.innerHTML = html;
-      document.getElementById("custo-div").style.display = "block";
     }
 
     function gerarInputs(labels) {
@@ -167,32 +140,40 @@
       const tipo = tipoSelect.value;
       const subtipo = subtipoSelect.value;
       const unidade = unidadeInput.value;
+      const nome = nomeUsuario || 'Usuário';
 
       let resultado = '';
-      let valorCalculado = null;
 
       try {
+        let custoUnitario = parseFloat(prompt("Informe o custo por m² ou m³ (R$):", "0"));
+        if (isNaN(custoUnitario) || custoUnitario <= 0) {
+          alert("Custo inválido.");
+          return;
+        }
+
+        let valorCalculado = 0;
+
         switch (tipo) {
           case 'terraplenagem': {
             const c = converterParaMetros(parseFloat(document.getElementById('comprimento').value), unidade);
             const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
             const p = converterParaMetros(parseFloat(document.getElementById('profundidade').value), unidade);
             valorCalculado = c * l * p;
-            resultado = `Volume: ${valorCalculado.toFixed(2)} m³`;
+            resultado = `Volume: ${valorCalculado.toFixed(2)} m³ — Custo estimado: R$ ${(valorCalculado * custoUnitario).toFixed(2)}`;
             break;
           }
           case 'revestimento': {
             const a = converterParaMetros(parseFloat(document.getElementById('altura').value), unidade);
             const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
             valorCalculado = a * l;
-            resultado = `Área: ${valorCalculado.toFixed(2)} m²`;
+            resultado = `Área: ${valorCalculado.toFixed(2)} m² — Custo estimado: R$ ${(valorCalculado * custoUnitario).toFixed(2)}`;
             break;
           }
           case 'pavimentacao': {
             const c = converterParaMetros(parseFloat(document.getElementById('comprimento').value), unidade);
             const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
             valorCalculado = c * l;
-            resultado = `Área: ${valorCalculado.toFixed(2)} m²`;
+            resultado = `Área: ${valorCalculado.toFixed(2)} m² — Custo estimado: R$ ${(valorCalculado * custoUnitario).toFixed(2)}`;
             break;
           }
           case 'reservatorio': {
@@ -201,13 +182,13 @@
                 const r = converterParaMetros(parseFloat(document.getElementById('raio').value), unidade);
                 const a = converterParaMetros(parseFloat(document.getElementById('altura').value), unidade);
                 valorCalculado = Math.PI * r * r * a;
-                resultado = `Volume Cilíndrico: ${valorCalculado.toFixed(2)} m³`;
+                resultado = `Volume Cilíndrico: ${valorCalculado.toFixed(2)} m³ — Custo estimado: R$ ${(valorCalculado * custoUnitario).toFixed(2)}`;
                 break;
               }
               case 'cubico': {
                 const aresta = converterParaMetros(parseFloat(document.getElementById('aresta').value), unidade);
                 valorCalculado = Math.pow(aresta, 3);
-                resultado = `Volume Cúbico: ${valorCalculado.toFixed(2)} m³`;
+                resultado = `Volume Cúbico: ${valorCalculado.toFixed(2)} m³ — Custo estimado: R$ ${(valorCalculado * custoUnitario).toFixed(2)}`;
                 break;
               }
               case 'retangular': {
@@ -215,24 +196,43 @@
                 const l = converterParaMetros(parseFloat(document.getElementById('largura').value), unidade);
                 const a = converterParaMetros(parseFloat(document.getElementById('altura').value), unidade);
                 valorCalculado = c * l * a;
-                resultado = `Volume Retangular: ${valorCalculado.toFixed(2)} m³`;
+                resultado = `Volume Retangular: ${valorCalculado.toFixed(2)} m³ — Custo estimado: R$ ${(valorCalculado * custoUnitario).toFixed(2)}`;
                 break;
               }
             }
             break;
           }
         }
+
+        let adicionarMateriais = confirm("Deseja adicionar materiais utilizados?");
+        if (adicionarMateriais) {
+          let totalMateriais = 0;
+          let qtd = parseInt(prompt("Quantos materiais deseja adicionar?"));
+          if (!isNaN(qtd) && qtd > 0) {
+            for (let i = 1; i <= qtd; i++) {
+              let nome = prompt(`Nome do material ${i}:`);
+              let quant = parseFloat(prompt(`Quantidade de ${nome}:`));
+              let preco = parseFloat(prompt(`Preço unitário de ${nome} (R$):`));
+              if (!isNaN(quant) && !isNaN(preco)) {
+                let detalhesMateriais = '';
+if (!isNaN(qtd) && !isNaN(preco)) {
+  const custo = quant * preco;
+  detalhesMateriais += `<br>- ${nome}: ${quant} × R$ ${preco.toFixed(2)} = R$ ${custo.toFixed(2)}`;
+  totalMateriais += custo;
+}
+              }
+            }
+            resultado += `<br><strong>Custo total dos materiais:</strong> R$ ${totalMateriais.toFixed(2)}`;
+resultado += `<br><strong>Detalhes:</strong>`;
+resultado += detalhesMateriais;
+          }
+        }
+
       } catch (e) {
         resultado = 'Erro no cálculo. Verifique os valores.';
       }
 
-      const custoUnitario = parseFloat(document.getElementById('custo').value);
-      if (!isNaN(custoUnitario) && valorCalculado !== null) {
-        const total = custoUnitario * valorCalculado;
-        resultado += ` — Custo estimado: R$ ${total.toFixed(2).replace('.', ',')}`;
-      }
-
-      document.getElementById('resultado').textContent = `${login}, ${resultado}`;
+      document.getElementById('resultado').innerHTML = `<strong>${nome}:</strong><br>${resultado}`;
     }
   </script>
 </body>
